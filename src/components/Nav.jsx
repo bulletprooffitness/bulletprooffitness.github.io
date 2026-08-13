@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { getNavPlatforms } from '../data/platforms'
 import { useCart } from '../lib/CartContext'
+import { useAuth } from '../context/AuthContext'
 import CartDrawer from './CartDrawer'
+import CategoryDropdown from './CategoryDropdown'
 import logo from '../assets/brand/logo.png'
 
 const linkClass = ({ isActive }) =>
@@ -19,6 +21,7 @@ const IS_PREVIEW = import.meta.env.VITE_IS_PREVIEW === 'true'
 export default function Nav() {
   const [cartOpen, setCartOpen] = useState(false)
   const { count } = useCart()
+  const { logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-40 bg-black/95 backdrop-blur border-b border-white/10">
@@ -35,6 +38,7 @@ export default function Nav() {
             </NavLink>
             <span className="text-white/20 text-xs select-none">|</span>
           </div>
+          <CategoryDropdown />
           {getNavPlatforms().map((p) => (
             <NavLink key={p.id} to={`/platform/${p.id}`} className={linkClass}>
               {p.name}
@@ -50,12 +54,20 @@ export default function Nav() {
             Our Story
           </NavLink>
           {IS_PREVIEW && (
-            <Link
-              to="/admin"
-              className="bg-amber-400 hover:bg-amber-300 text-black text-[11px] font-bold uppercase tracking-widest px-4 py-2 rounded-full transition"
-            >
-              Admin
-            </Link>
+            <>
+              <Link
+                to="/admin"
+                className="bg-amber-400 hover:bg-amber-300 text-black text-[11px] font-bold uppercase tracking-widest px-4 py-2 rounded-full transition"
+              >
+                Admin
+              </Link>
+              <button
+                onClick={logout}
+                className="text-[11px] font-semibold uppercase tracking-widest text-white/40 hover:text-white border border-white/15 hover:border-white/30 rounded-full px-4 py-2 transition"
+              >
+                Logout
+              </button>
+            </>
           )}
         </nav>
 

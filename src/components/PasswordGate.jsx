@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, REMEMBER_ME_DAYS } from '../context/AuthContext'
 
 export default function PasswordGate({ children }) {
   const { authed, checking, login } = useAuth()
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -13,7 +14,7 @@ export default function PasswordGate({ children }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSubmitting(true)
-    const ok = await login(password)
+    const ok = await login(password, rememberMe)
     setSubmitting(false)
     if (!ok) {
       setError('Incorrect password.')
@@ -47,6 +48,22 @@ export default function PasswordGate({ children }) {
               placeholder="Enter password"
             />
           </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="mt-0.5 accent-red-600"
+            />
+            <span className="text-xs text-white/60 leading-relaxed flex-shrink-1">
+              Remember me for {REMEMBER_ME_DAYS} days on this device.{' '}
+              <span className="text-white/35">
+                Off = only until you close this tab. This is why you may not be asked again on a
+                return visit within {REMEMBER_ME_DAYS} days — the site is still private.
+              </span>
+            </span>
+          </label>
 
           {error && <p className="text-red-500 text-xs">{error}</p>}
 
