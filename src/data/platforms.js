@@ -4,7 +4,13 @@
 //
 // Packages (bundles) for a platform live in data/packages.js, keyed by
 // platformId — not stored on the platform record itself.
-export const platforms = [
+//
+// heroImage/homeImage below are bare filenames from src/assets/products/,
+// resolved through productAsset() at the bottom of this file — see the note
+// in data/products.js for why they can't be raw '/src/assets/...' strings.
+import { productAsset } from '../lib/assets'
+
+const rawPlatforms = [
   {
     id: 'isolator',
     name: 'ISOLATOR',
@@ -79,6 +85,12 @@ export const platforms = [
     homeImage: '/src/assets/products/direct-flight-1-padded.png',
   },
 ]
+
+export const platforms = rawPlatforms.map((p) => ({
+  ...p,
+  heroImage: productAsset(p.heroImage),
+  homeImage: productAsset(p.homeImage),
+}))
 
 export function getPlatform(id) {
   return platforms.find((p) => p.id === id)

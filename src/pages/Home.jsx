@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { getNavPlatforms } from '../data/platforms'
 import { categories } from '../data/categories'
+import { productAsset, brandAsset } from '../lib/assets'
 import PlatformCard from '../components/PlatformCard'
 import CategoryCard from '../components/CategoryCard'
 
@@ -11,7 +12,7 @@ export default function Home() {
         {/* Product pinned to the right two-thirds; left third stays clear for the headline
             so type never overlaps machine detail (Tonal / Eleiko pattern). */}
         <img
-          src="/src/assets/products/isolator-3x3_-2.jpg"
+          src={productAsset('isolator-3x3_-2.jpg')}
           alt="Bulletproof Isolator"
           className="absolute inset-y-0 right-0 w-[72%] h-full object-cover object-left"
         />
@@ -59,7 +60,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-12 items-center">
           <div className="md:col-span-2 relative">
             <img
-              src="/src/assets/brand/P1259186_a98e293a-5fa5-468a-914d-dcd076a5d7b5.jpg"
+              src={brandAsset('P1259186_a98e293a-5fa5-468a-914d-dcd076a5d7b5.jpg')}
               alt="Larry Nolan, founder of Bulletproof Fitness Equipment, with his sister"
               className="w-full h-[560px] object-cover object-top shadow-2xl"
             />

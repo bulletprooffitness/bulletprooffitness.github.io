@@ -1,3 +1,5 @@
+import { brandAsset } from '../lib/assets'
+
 function StorySection({ image, imageAlt, imagePosition = 'right', eyebrow, title, paragraphs }) {
   const imageOnRight = imagePosition === 'right'
 
@@ -42,7 +44,7 @@ export default function OurStory() {
     <div>
       <section className="relative bg-black overflow-hidden">
         <img
-          src="/src/assets/brand/P1258598.jpg"
+          src={brandAsset('P1258598.jpg')}
           alt="Larry Nolan, founder of Bulletproof Fitness Equipment"
           className="absolute right-0 top-0 w-1/2 h-full object-cover object-top"
         />
@@ -135,7 +137,7 @@ export default function OurStory() {
       </section>
 
       <StorySection
-        image="/src/assets/brand/IMG_66F0773A9B5D-1.jpg"
+        image={brandAsset('IMG_66F0773A9B5D-1.jpg')}
         imageAlt="Larry Nolan during the Hardcore Fitness era"
         imagePosition="right"
         eyebrow="Hardcore Fitness"
@@ -148,7 +150,7 @@ export default function OurStory() {
       />
 
       <StorySection
-        image="/src/assets/brand/family-photo.jpg"
+        image={brandAsset('family-photo.jpg')}
         imageAlt="Larry Nolan with his family, who run Bulletproof Fitness Equipment together"
         imagePosition="left"
         eyebrow="Family Business"

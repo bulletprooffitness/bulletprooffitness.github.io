@@ -14,8 +14,15 @@
 // An empty or missing `relationships` array means "not yet verified" —
 // deliberately left blank rather than guessed. Confirm with the business
 // before publishing; use the Admin > Compatibility screen to fill these in.
+//
+// `images` below list bare filenames from src/assets/products/ — resolved to
+// real build-safe URLs by productAsset() (see lib/assets.js) in the
+// `products` export at the bottom of this file. Do not write '/src/assets/...'
+// path strings directly; they work in dev (Vite serves the whole project
+// tree) but 404 in production, since nothing ever imports them.
+import { productAsset } from '../lib/assets'
 
-export const products = [
+const rawProducts = [
   {
     handle: 'isolator-3x3',
     title: 'ISOLATOR 3X3',
@@ -311,6 +318,11 @@ export const products = [
     variants: [{ title: 'One Size', price: 29.99, available: true }],
   },
 ]
+
+export const products = rawProducts.map((p) => ({
+  ...p,
+  images: p.images.map(productAsset),
+}))
 
 // Admin corrections (category, relationships, etc.) live in localStorage and
 // are merged over this base data at read time — see lib/adminStore.js.

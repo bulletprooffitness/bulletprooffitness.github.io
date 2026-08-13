@@ -2,7 +2,12 @@
 // which are the core machines). A product's `category` field on products.js
 // links it here; compatibility badges read each product's `relationships` array
 // (see relationshipTypes.js).
-export const categories = [
+//
+// homeImage below is a bare filename from src/assets/products/, resolved
+// through productAsset() — see the note in data/products.js for why.
+import { productAsset } from '../lib/assets'
+
+const rawCategories = [
   {
     id: 'handles',
     name: 'Handles',
@@ -16,6 +21,11 @@ export const categories = [
     homeImage: '/src/assets/products/barbells-category-padded.png',
   },
 ]
+
+export const categories = rawCategories.map((c) => ({
+  ...c,
+  homeImage: productAsset(c.homeImage),
+}))
 
 export function getCategory(id) {
   return categories.find((c) => c.id === id)
