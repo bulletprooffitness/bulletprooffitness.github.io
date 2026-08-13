@@ -4,7 +4,7 @@ import { useAuth, REMEMBER_ME_DAYS } from '../context/AuthContext'
 export default function PasswordGate({ children }) {
   const { authed, checking, login } = useAuth()
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -49,19 +49,28 @@ export default function PasswordGate({ children }) {
             />
           </div>
 
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="mt-0.5 accent-red-600"
-            />
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <span className="relative inline-flex flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="sr-only peer"
+              />
+              <span
+                className="w-9 h-5 rounded-full bg-white/15 peer-checked:bg-red-600 peer-focus-visible:ring-2 peer-focus-visible:ring-red-600/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-900 transition-colors duration-200"
+                aria-hidden="true"
+              />
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                  rememberMe ? 'translate-x-4' : 'translate-x-0'
+                }`}
+                aria-hidden="true"
+              />
+            </span>
             <span className="text-xs text-white/60 leading-relaxed flex-shrink-1">
               Remember me for {REMEMBER_ME_DAYS} days on this device.{' '}
-              <span className="text-white/35">
-                Off = only until you close this tab. This is why you may not be asked again on a
-                return visit within {REMEMBER_ME_DAYS} days — the site is still private.
-              </span>
+            
             </span>
           </label>
 

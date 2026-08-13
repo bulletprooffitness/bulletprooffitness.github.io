@@ -1,37 +1,40 @@
-import { useState } from 'react'
-import { NavLink, Link } from 'react-router-dom'
-import { getNavPlatforms } from '../data/platforms'
-import { useCart } from '../lib/CartContext'
-import { useAuth } from '../context/AuthContext'
-import CartDrawer from './CartDrawer'
-import CategoryDropdown from './CategoryDropdown'
-import logo from '../assets/brand/logo.png'
+import { useState } from "react";
+import { NavLink, Link } from "react-router-dom";
+import { getNavPlatforms } from "../data/platforms";
+import { useCart } from "../lib/CartContext";
+import { useAuth } from "../context/AuthContext";
+import CartDrawer from "./CartDrawer";
+import CategoryDropdown from "./CategoryDropdown";
+import logo from "../assets/brand/logo.png";
 
 const linkClass = ({ isActive }) =>
   `text-xs font-semibold uppercase tracking-widest transition ${
-    isActive ? 'text-white' : 'text-white/60 hover:text-white'
-  }`
+    isActive ? "text-white" : "text-white/60 hover:text-white"
+  }`;
 
 // Shown only while the site is running as a password-gated preview (see
 // PasswordGate / AuthContext). Once the site goes live, drop VITE_IS_PREVIEW
 // from the deploy workflow's build env and this tab disappears with it — no
 // manual find-and-delete needed.
-const IS_PREVIEW = import.meta.env.VITE_IS_PREVIEW === 'true'
+const IS_PREVIEW = import.meta.env.VITE_IS_PREVIEW === "true";
 
 export default function Nav() {
-  const [cartOpen, setCartOpen] = useState(false)
-  const { count } = useCart()
-  const { logout } = useAuth()
+  const [cartOpen, setCartOpen] = useState(false);
+  const { count } = useCart();
+  const { logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 bg-black/95 backdrop-blur border-b border-white/10">
       <div className="relative max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center h-9">
-          <img src={logo} alt="Bulletproof Fitness Equipment" className="h-full w-auto object-contain" />
+          <img
+            src={logo}
+            alt="Bulletproof Fitness Equipment"
+            className="h-full w-auto object-contain"
+          />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          
           <div className="flex items-center gap-3">
             <NavLink to="/" end className={linkClass}>
               Home
@@ -39,11 +42,7 @@ export default function Nav() {
             <span className="text-white/20 text-xs select-none">|</span>
           </div>
           <CategoryDropdown />
-          {getNavPlatforms().map((p) => (
-            <NavLink key={p.id} to={`/platform/${p.id}`} className={linkClass}>
-              {p.name}
-            </NavLink>
-          ))}
+
           <NavLink to="/apparel" className={linkClass}>
             Apparel
           </NavLink>
@@ -101,5 +100,5 @@ export default function Nav() {
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
-  )
+  );
 }
