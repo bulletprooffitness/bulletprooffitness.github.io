@@ -7,7 +7,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 // calls. See worker/auth.worker.js for why: Vite bakes VITE_* env vars into
 // the shipped JS as plain text, so any client-side-only check is readable by
 // anyone who opens dev tools — this Worker is what makes the gate real.
-const AUTH_ENDPOINT = import.meta.env.VITE_AUTH_ENDPOINT ?? 'https://preview-auth.fosterapps.com'
+const AUTH_ENDPOINT =
+  import.meta.env.VITE_AUTH_ENDPOINT ?? 'https://bulletproof-preview-auth.fosterapps.workers.dev'
 const SESSION_KEY = 'bulletproof_preview_token'
 
 const AuthContext = createContext(null)
