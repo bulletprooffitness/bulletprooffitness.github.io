@@ -2,15 +2,20 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function PasswordGate({ children }) {
-  const { authed, login } = useAuth()
+  const { authed, checking, login } = useAuth()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
+  if (checking) return null
   if (authed) return children
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    if (!login(password)) {
+    setSubmitting(true)
+    const ok = await login(password)
+    setSubmitting(false)
+    if (!ok) {
       setError('Incorrect password.')
       setPassword('')
     }
@@ -47,9 +52,10 @@ export default function PasswordGate({ children }) {
 
           <button
             type="submit"
-            className="w-full justify-center py-3 text-sm font-semibold uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded transition"
+            disabled={submitting}
+            className="w-full justify-center py-3 text-sm font-semibold uppercase tracking-widest bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition"
           >
-            View Preview
+            {submitting ? 'Checking…' : 'View Preview'}
           </button>
         </form>
 

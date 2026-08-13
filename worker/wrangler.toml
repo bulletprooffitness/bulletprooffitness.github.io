@@ -1,0 +1,11 @@
+name = "bulletproof-preview-auth"
+main = "auth.worker.js"
+compatibility_date = "2024-09-23"
+
+# Uses the same Cloudflare account/zone as fosterapps.com's other Workers.
+# Serves on preview-auth.fosterapps.com instead of *.workers.dev once the
+# route below is uncommented and DNS/route is confirmed in the dashboard.
+#
+# [[routes]]
+# pattern = "preview-auth.fosterapps.com/*"
+# zone_name = "fosterapps.com"

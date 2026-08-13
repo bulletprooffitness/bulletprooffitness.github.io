@@ -11,10 +11,10 @@ const linkClass = ({ isActive }) =>
   }`
 
 // Shown only while the site is running as a password-gated preview (see
-// AuthContext's VITE_DEMO_PASSWORD). Once the site goes live, that env var
-// is removed from the deploy and this tab disappears with it — no manual
-// find-and-delete needed.
-const IS_PREVIEW = Boolean(import.meta.env.VITE_DEMO_PASSWORD)
+// PasswordGate / AuthContext). Once the site goes live, drop VITE_IS_PREVIEW
+// from the deploy workflow's build env and this tab disappears with it — no
+// manual find-and-delete needed.
+const IS_PREVIEW = import.meta.env.VITE_IS_PREVIEW === 'true'
 
 export default function Nav() {
   const [cartOpen, setCartOpen] = useState(false)

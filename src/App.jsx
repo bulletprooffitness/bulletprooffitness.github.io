@@ -13,7 +13,7 @@ import ProductDetail from './pages/ProductDetail'
 import OurStory from './pages/OurStory'
 import Admin from './pages/Admin'
 
-export default function App() {
+export default function App() { 
   return (
     <PasswordGate>
       <CartProvider>
