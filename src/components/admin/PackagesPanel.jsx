@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getProducts } from '../../data/products'
 import { getPackages, resolvePackage } from '../../data/packages'
 import {
@@ -46,7 +46,7 @@ function inferPlatformId(baseUnit) {
   return resolveToNavPlatform(rels[0].platformId)?.id || null
 }
 
-function PackageForm({ initial, products, onSave, onCancel }) {
+function PackageForm({ initial, products, onSave, onCancel, bare = false }) {
   const [draft, setDraft] = useState(initial)
 
   const baseUnitProducts = products.filter(BASE_UNIT_PRODUCTS_FILTER)
@@ -108,7 +108,7 @@ function PackageForm({ initial, products, onSave, onCancel }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="border border-white/10 rounded-xl bg-neutral-950 p-5 space-y-4"
+      className={bare ? 'space-y-4' : 'border border-white/10 rounded-xl bg-neutral-950 p-5 space-y-4'}
     >
       <div>
         <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
@@ -271,46 +271,78 @@ function PackageForm({ initial, products, onSave, onCancel }) {
   )
 }
 
-function PackageRow({ pkg, onEdit, onDelete }) {
+// Expand/collapse duration — kept short per design intent ("shouldn't be
+// long"). PackagesPanel's open/close sequencing (below) waits this long
+// before mounting a newly-opened row's form, so a close never visually
+// overlaps the next row's open.
+const EXPAND_MS = 180
+
+function PackageRow({ pkg, products, isOpen, isClosing, onToggle, onSave, onDelete }) {
   const resolved = resolvePackage(pkg)
   const platform = PACKAGE_PLATFORMS.find((p) => p.id === pkg.platformId)
+  const expanded = isOpen && !isClosing
 
   return (
-    <div className="border border-white/10 rounded-xl bg-neutral-950 p-5 flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <p className="text-white text-sm font-medium">{pkg.name}</p>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40 border border-white/15 rounded-full px-2 py-0.5">
-            {platform?.name || pkg.platformId}
-          </span>
-        </div>
-        <p className="text-white/40 text-xs mb-2">
-          {resolved.baseUnit ? resolved.baseUnit.title : '⚠ missing base unit'} +{' '}
-          {resolved.accessories.length} accessor{resolved.accessories.length === 1 ? 'y' : 'ies'}
-        </p>
-        <p className="text-white/60 text-sm tabular-nums">
-          ${resolved.price.toFixed(0)}
-          {resolved.savings > 0 && (
-            <span className="text-white/30">
-              {' '}
-              (individual ${resolved.individualPrice.toFixed(0)}, save ${resolved.savings.toFixed(0)})
+    <div className="border border-white/10 rounded-xl bg-neutral-950 overflow-hidden">
+      <div className="p-5 flex items-start justify-between gap-4">
+        <button onClick={onToggle} className="min-w-0 text-left flex-1">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="text-white text-sm font-medium">{pkg.name}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40 border border-white/15 rounded-full px-2 py-0.5">
+              {platform?.name || pkg.platformId}
             </span>
-          )}
-        </p>
+          </div>
+          <p className="text-white/40 text-xs mb-2">
+            {resolved.baseUnit ? resolved.baseUnit.title : '⚠ missing base unit'} +{' '}
+            {resolved.accessories.length} accessor{resolved.accessories.length === 1 ? 'y' : 'ies'}
+          </p>
+          <p className="text-white/60 text-sm tabular-nums">
+            ${resolved.price.toFixed(0)}
+            {resolved.savings > 0 && (
+              <span className="text-white/30">
+                {' '}
+                (individual ${resolved.individualPrice.toFixed(0)}, save ${resolved.savings.toFixed(0)})
+              </span>
+            )}
+          </p>
+        </button>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={onToggle}
+            className="text-[11px] font-semibold uppercase tracking-widest text-white/60 hover:text-white border border-white/15 rounded-full px-4 py-2 transition"
+          >
+            {expanded ? 'Close' : 'Edit'}
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-[11px] font-semibold uppercase tracking-widest text-white/40 hover:text-red-400 border border-white/15 rounded-full px-4 py-2 transition"
+          >
+            Delete
+          </button>
+        </div>
       </div>
-      <div className="flex gap-2 flex-shrink-0">
-        <button
-          onClick={onEdit}
-          className="text-[11px] font-semibold uppercase tracking-widest text-white/60 hover:text-white border border-white/15 rounded-full px-4 py-2 transition"
-        >
-          Edit
-        </button>
-        <button
-          onClick={onDelete}
-          className="text-[11px] font-semibold uppercase tracking-widest text-white/40 hover:text-red-400 border border-white/15 rounded-full px-4 py-2 transition"
-        >
-          Delete
-        </button>
+
+      <div
+        className="grid transition-[grid-template-rows] ease-out"
+        style={{ gridTemplateRows: expanded ? '1fr' : '0fr', transitionDuration: `${EXPAND_MS}ms` }}
+      >
+        <div className="overflow-hidden">
+          <div
+            className={`px-5 pb-5 transition-opacity ease-out ${expanded ? 'opacity-100' : 'opacity-0'}`}
+            style={{ transitionDuration: `${EXPAND_MS}ms` }}
+          >
+            {(isOpen || isClosing) && (
+              <PackageForm
+                key={pkg.id}
+                initial={{ ...pkg, price: String(pkg.price) }}
+                products={products}
+                onSave={onSave}
+                onCancel={onToggle}
+                bare
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -318,7 +350,12 @@ function PackageRow({ pkg, onEdit, onDelete }) {
 
 export default function PackagesPanel() {
   const [version, setVersion] = useState(0)
-  const [editingId, setEditingId] = useState(null)
+  // openId is the row currently expanded (or about to be, once closingId's
+  // row finishes animating shut). closingId is the row mid-close-animation.
+  // Only one row is ever open or closing at a time, and a new open always
+  // waits for the previous row's close to finish first — see handleToggle.
+  const [openId, setOpenId] = useState(null)
+  const [closingId, setClosingId] = useState(null)
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState(false)
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -369,13 +406,14 @@ export default function PackagesPanel() {
     } else {
       createPackage(draft)
     }
-    setEditingId(null)
+    setOpenId(null)
     setCreating(false)
     refresh()
   }
 
   function handleDelete(id) {
     if (!confirm('Delete this package? This cannot be undone.')) return
+    if (openId === id) setOpenId(null)
     deletePackage(id)
     refresh()
   }
@@ -394,13 +432,46 @@ export default function PackagesPanel() {
 
   function handleConfirmReset() {
     clearAllPackageOverrides()
-    setEditingId(null)
+    setOpenId(null)
+    setClosingId(null)
     setCreating(false)
     setConfirmingReset(false)
     refresh()
   }
 
-  const editingPackage = editingId ? allPackages.find((p) => p.id === editingId) : null
+  // Clicking a row's Edit/Close toggles it. Opening a different row while
+  // one is already open closes the current one first (closingId drives its
+  // collapse animation) and queues the new id in pendingOpenId — it only
+  // actually opens once the close animation finishes, so a close and the
+  // next open never visually overlap.
+  const [pendingOpenId, setPendingOpenId] = useState(null)
+
+  function handleToggle(id) {
+    if (openId === id) {
+      setClosingId(id)
+      setOpenId(null)
+      return
+    }
+    if (openId) {
+      setClosingId(openId)
+      setPendingOpenId(id)
+      setOpenId(null)
+      return
+    }
+    setOpenId(id)
+  }
+
+  useEffect(() => {
+    if (!closingId) return
+    const timer = setTimeout(() => {
+      setClosingId(null)
+      if (pendingOpenId) {
+        setOpenId(pendingOpenId)
+        setPendingOpenId(null)
+      }
+    }, EXPAND_MS)
+    return () => clearTimeout(timer)
+  }, [closingId, pendingOpenId])
 
   return (
     <div className="space-y-4">
@@ -424,7 +495,7 @@ export default function PackagesPanel() {
           >
             Clear Local Edits
           </button>
-          {!creating && !editingId && (
+          {!creating && (
             <button
               onClick={() => setCreating(true)}
               className="text-[11px] font-semibold uppercase tracking-widest bg-white text-black rounded-full px-5 py-2.5 hover:bg-white/90 transition whitespace-nowrap"
@@ -444,15 +515,6 @@ export default function PackagesPanel() {
         />
       )}
 
-      {editingPackage && (
-        <PackageForm
-          initial={{ ...editingPackage, price: String(editingPackage.price) }}
-          products={products}
-          onSave={handleSave}
-          onCancel={() => setEditingId(null)}
-        />
-      )}
-
       <div className="space-y-3">
         {allPackages.length === 0 && !creating && (
           <p className="text-white/30 text-sm italic">No packages yet.</p>
@@ -461,7 +523,11 @@ export default function PackagesPanel() {
           <PackageRow
             key={pkg.id}
             pkg={pkg}
-            onEdit={() => setEditingId(pkg.id)}
+            products={products}
+            isOpen={openId === pkg.id}
+            isClosing={closingId === pkg.id}
+            onToggle={() => handleToggle(pkg.id)}
+            onSave={handleSave}
             onDelete={() => handleDelete(pkg.id)}
           />
         ))}

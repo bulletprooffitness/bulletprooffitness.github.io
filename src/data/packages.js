@@ -54,6 +54,15 @@ export const packages = [
     accessoryHandles: ['all-bar'],
     price: 1199.0,
   },
+  {
+    id: "vts-lite-starter",
+    platformId: "vts",
+    name: "VTS Lite Starter",
+    description: "VTS Lite carriages, Feather Barbell, and 9\" Weight Horns",
+    baseUnitHandle: "vts-lite-rack-attachment-pair",
+    accessoryHandles: ["vts-feather-barbell","vts-9in-weight-horns-pair"],
+    price: 799,
+  },
 ]
 
 export function getPackages() {
@@ -101,3 +110,5 @@ export function resolvePackage(pkg, variantIndex = 0) {
 }
 
 export { getAllPackageOverrides }
+
+
