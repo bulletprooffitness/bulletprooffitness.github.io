@@ -328,9 +328,17 @@ const rawProducts = [
   },
 ]
 
+// Resolves both the product's own `images` and each variant's own `images`
+// (when it has one) through productAsset() — a variant's images are just as
+// prone to the raw-string-never-imported production bug as the top-level
+// ones, since they're plain filename strings in rawProducts above.
 export const products = rawProducts.map((p) => ({
   ...p,
   images: p.images.map(productAsset),
+  variants: (p.variants || []).map((v) => ({
+    ...v,
+    ...(v.images ? { images: v.images.map(productAsset) } : {}),
+  })),
 }))
 
 // Admin corrections (category, relationships, etc.) live in localStorage and
