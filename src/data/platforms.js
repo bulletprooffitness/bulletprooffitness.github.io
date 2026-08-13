@@ -100,3 +100,17 @@ export function getPlatform(id) {
 export function getNavPlatforms() {
   return platforms.filter((p) => !p.hiddenFromNav)
 }
+
+// Walks a platform id up through parentPlatformId until it reaches a
+// nav-visible platform — e.g. 'vts-full' (a hidden sub-platform) resolves to
+// the 'vts' hub. Used to infer a package's platformId from its base unit's
+// single relationship, so Admin doesn't need a separate platform picker for
+// the common case. Returns null if the id doesn't resolve to anything (bad
+// data) rather than guessing.
+export function resolveToNavPlatform(platformId) {
+  let current = getPlatform(platformId)
+  while (current && current.hiddenFromNav) {
+    current = current.parentPlatformId ? getPlatform(current.parentPlatformId) : null
+  }
+  return current || null
+}

@@ -4,6 +4,7 @@ import { getPlatform, platforms } from '../data/platforms'
 import { getProductsByPlatform } from '../data/products'
 import { getPackagesByPlatform, resolvePackage } from '../data/packages'
 import { RELATIONSHIP_TYPES } from '../data/relationshipTypes'
+import { resolveVariantImages } from '../lib/pricing'
 import { useCart } from '../lib/CartContext'
 import ProductCard from '../components/ProductCard'
 
@@ -13,6 +14,175 @@ const SPEC_LABELS = [
   { key: 'weightCapacity', label: 'Weight Capacity' },
   { key: 'camOptions', label: 'Cam Options' },
 ]
+
+// "Shop This System" card — one per core product. When the product has more
+// than one variant (e.g. Isolator's 3X3 vs 2X2/2X3 post sizes), a selector
+// switches the shown price, image, and specs live instead of requiring a
+// visit to the product detail page just to compare sizes.
+function CoreProductCard({ product }) {
+  const [variantIndex, setVariantIndex] = useState(0)
+  const variant = product.variants?.[variantIndex]
+  const hasMultipleVariants = (product.variants?.length || 0) > 1
+  const images = resolveVariantImages(product, variantIndex)
+  const specs = variant?.specs
+
+  return (
+    <div className="group relative overflow-hidden bg-neutral-900">
+      <Link to={`/product/${product.handle}`} className="block relative aspect-[4/3] overflow-hidden">
+        <img
+          src={images[0]}
+          alt={product.title}
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-700 ease-out"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-8">
+          <div className="flex items-end justify-between gap-4">
+            <h3 className="font-display text-4xl text-white leading-none">{product.title}</h3>
+            <span className="text-2xl text-white font-light whitespace-nowrap tabular-nums">
+              ${(variant?.price ?? product.price).toFixed(0)}
+            </span>
+          </div>
+          <p className="text-white/55 text-sm mt-3 max-w-md leading-relaxed flex-shrink-1">
+            {product.description}
+          </p>
+        </div>
+      </Link>
+
+      <div className="px-8 pb-8 pt-2 bg-neutral-900">
+        {hasMultipleVariants && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {product.variants.map((v, i) => (
+              <button
+                key={v.title}
+                onClick={(e) => {
+                  e.preventDefault()
+                  setVariantIndex(i)
+                }}
+                disabled={!v.available}
+                className={`text-[11px] font-semibold uppercase tracking-[0.15em] rounded-full px-4 py-2 transition ${
+                  i === variantIndex
+                    ? 'bg-white text-black'
+                    : 'text-white border border-white/20 hover:border-white/50'
+                } ${!v.available ? 'opacity-30 cursor-not-allowed' : ''}`}
+              >
+                {v.title}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {specs && (
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 mb-6">
+            {SPEC_LABELS.map(({ key, label }) =>
+              specs[key] ? (
+                <div key={key}>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 mb-1">
+                    {label}
+                  </dt>
+                  <dd className="text-white text-sm tabular-nums">{specs[key]}</dd>
+                </div>
+              ) : null
+            )}
+          </dl>
+        )}
+
+        <Link
+          to={`/product/${product.handle}`}
+          className="inline-block text-[11px] font-semibold uppercase tracking-[0.2em] text-white border-b border-white/40 hover:border-white pb-0.5 transition"
+        >
+          View Details
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// Packages whose base unit has multiple variants (e.g. Isolator's post
+// sizes) get their own selector — the package's total price and savings
+// recalculate from the selected variant's price via resolvePackage's
+// variantIndex param, same live-pricing behavior as the product page.
+function PackageCard({ pkg, onAdd, added }) {
+  const [variantIndex, setVariantIndex] = useState(0)
+  const resolved = resolvePackage(pkg, variantIndex)
+  const hasMultipleVariants = (resolved.baseUnit?.variants?.length || 0) > 1
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black p-8 flex flex-col">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <h3 className="font-display text-3xl text-white leading-none">{pkg.name}</h3>
+        {resolved.savings > 0 && (
+          <span className="flex-shrink-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full whitespace-nowrap">
+            Save ${resolved.savings.toFixed(0)}
+          </span>
+        )}
+      </div>
+      <p className="text-white/50 text-sm leading-relaxed flex-shrink-1 mb-6">{pkg.description}</p>
+
+      {hasMultipleVariants && (
+        <div className="mb-6">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 block mb-2">
+            {resolved.baseUnit.title} Size
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {resolved.baseUnit.variants.map((v, i) => (
+              <button
+                key={v.title}
+                onClick={() => setVariantIndex(i)}
+                disabled={!v.available}
+                className={`text-[11px] font-semibold uppercase tracking-[0.15em] rounded-full px-4 py-2 transition ${
+                  i === variantIndex
+                    ? 'bg-white text-black'
+                    : 'text-white border border-white/20 hover:border-white/50'
+                } ${!v.available ? 'opacity-30 cursor-not-allowed' : ''}`}
+              >
+                {v.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ul className="text-white/70 text-sm space-y-2 mb-6">
+        {resolved.baseUnit && (
+          <li className="flex items-center justify-between gap-4">
+            <span className="flex-shrink-1">
+              {resolved.baseUnit.title}
+              {hasMultipleVariants ? ` — ${resolved.baseUnit.variants[variantIndex].title}` : ''}
+            </span>
+            <span className="tabular-nums text-white/40 whitespace-nowrap">
+              ${resolved.baseUnitPrice.toFixed(0)}
+            </span>
+          </li>
+        )}
+        {resolved.accessories.map((a) => (
+          <li key={a.handle} className="flex items-center justify-between gap-4">
+            <span className="flex-shrink-1">{a.title}</span>
+            <span className="tabular-nums text-white/40 whitespace-nowrap">${a.price.toFixed(0)}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-end justify-between gap-4">
+        <div>
+          {resolved.savings > 0 && (
+            <span className="block text-white/35 text-sm line-through tabular-nums">
+              ${resolved.individualPrice.toFixed(0)}
+            </span>
+          )}
+          <span className="text-3xl text-white font-light tabular-nums">${resolved.price.toFixed(0)}</span>
+        </div>
+        {resolved.baseUnit && (
+          <button
+            onClick={() => onAdd(resolved)}
+            className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-red-600 hover:bg-red-700 rounded-full px-6 py-3 transition whitespace-nowrap"
+          >
+            {added ? 'Added to Cart' : 'Add Package to Cart'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function Platform() {
   const { id } = useParams()
@@ -25,23 +195,24 @@ export default function Platform() {
   const products = getProductsByPlatform(id, platform.subPlatformIds)
   const core = products.filter((p) => p.role === 'platform' || p.role === 'standalone')
   const accessories = products.filter((p) => p.role === 'attachment' || p.role === 'accessory')
-  const hasSpecs = core.some((p) => p.specs)
-  const packages = getPackagesByPlatform(id).map(resolvePackage)
+  const packages = getPackagesByPlatform(id)
 
-  function handleAddPackage(pkg) {
+  function handleAddPackage(resolved) {
     addItem({
       kind: 'package',
-      id: pkg.id,
-      title: pkg.name,
-      price: pkg.price,
-      image: pkg.baseUnit?.images?.[0],
+      id: resolved.id,
+      title: resolved.baseUnit?.variants?.length > 1
+        ? `${resolved.name} — ${resolved.baseUnit.variants[resolved.variantIndex]?.title}`
+        : resolved.name,
+      price: resolved.price,
+      image: resolved.baseUnit?.images?.[0],
       components: [
-        ...(pkg.baseUnit ? [{ title: pkg.baseUnit.title }] : []),
-        ...pkg.accessories.map((a) => ({ title: a.title })),
+        ...(resolved.baseUnit ? [{ title: resolved.baseUnit.title }] : []),
+        ...resolved.accessories.map((a) => ({ title: a.title })),
       ],
     })
-    setAddedPackageId(pkg.id)
-    setTimeout(() => setAddedPackageId((current) => (current === pkg.id ? null : current)), 2000)
+    setAddedPackageId(resolved.id)
+    setTimeout(() => setAddedPackageId((current) => (current === resolved.id ? null : current)), 2000)
   }
 
   const idsInScope = [id, ...(platform.subPlatformIds || [])]
@@ -80,71 +251,11 @@ export default function Platform() {
         {core.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {core.map((p) => (
-              <Link
-                key={p.handle}
-                to={`/product/${p.handle}`}
-                className="group relative block aspect-[4/3] overflow-hidden bg-neutral-900"
-              >
-                <img
-                  src={p.images[0]}
-                  alt={p.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-8">
-                  <div className="flex items-end justify-between gap-4">
-                    <h3 className="font-display text-4xl text-white leading-none">{p.title}</h3>
-                    <span className="text-2xl text-white font-light whitespace-nowrap tabular-nums">
-                      ${p.price.toFixed(0)}
-                    </span>
-                  </div>
-                  <p className="text-white/55 text-sm mt-3 max-w-md leading-relaxed flex-shrink-1">
-                    {p.description}
-                  </p>
-                  <span className="inline-block mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white border-b border-white/40 group-hover:border-white pb-0.5 transition">
-                    View Details
-                  </span>
-                </div>
-              </Link>
+              <CoreProductCard key={p.handle} product={p} />
             ))}
           </div>
         ) : (
           <p className="text-white/40 text-sm">No core products yet in the Phase 1 demo set.</p>
-        )}
-
-        {/* Spec comparison — the kind of detail that signals engineered, not just designed */}
-        {hasSpecs && core.length > 1 && (
-          <div className="mt-16 overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-white/15">
-                  <th className="text-left py-4 pr-8 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 font-normal">
-                    Spec
-                  </th>
-                  {core.map((p) => (
-                    <th
-                      key={p.handle}
-                      className="text-left py-4 px-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 font-normal whitespace-nowrap"
-                    >
-                      {p.title}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {SPEC_LABELS.map(({ key, label }) => (
-                  <tr key={key} className="border-b border-white/5">
-                    <td className="py-4 pr-8 text-white/45">{label}</td>
-                    {core.map((p) => (
-                      <td key={p.handle} className="py-4 px-6 text-white tabular-nums">
-                        {p.specs?.[key] ?? '—'}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         )}
       </section>
 
@@ -163,60 +274,12 @@ export default function Platform() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {packages.map((pkg) => (
-                <div
+                <PackageCard
                   key={pkg.id}
-                  className="rounded-2xl border border-white/10 bg-black p-8 flex flex-col"
-                >
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <h3 className="font-display text-3xl text-white leading-none">{pkg.name}</h3>
-                    {pkg.savings > 0 && (
-                      <span className="flex-shrink-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full whitespace-nowrap">
-                        Save ${pkg.savings.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-white/50 text-sm leading-relaxed flex-shrink-1 mb-6">{pkg.description}</p>
-
-                  <ul className="text-white/70 text-sm space-y-2 mb-6">
-                    {pkg.baseUnit && (
-                      <li className="flex items-center justify-between gap-4">
-                        <span className="flex-shrink-1">{pkg.baseUnit.title}</span>
-                        <span className="tabular-nums text-white/40 whitespace-nowrap">
-                          ${pkg.baseUnit.price.toFixed(0)}
-                        </span>
-                      </li>
-                    )}
-                    {pkg.accessories.map((a) => (
-                      <li key={a.handle} className="flex items-center justify-between gap-4">
-                        <span className="flex-shrink-1">{a.title}</span>
-                        <span className="tabular-nums text-white/40 whitespace-nowrap">
-                          ${a.price.toFixed(0)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-auto pt-6 border-t border-white/10 flex items-end justify-between gap-4">
-                    <div>
-                      {pkg.savings > 0 && (
-                        <span className="block text-white/35 text-sm line-through tabular-nums">
-                          ${pkg.individualPrice.toFixed(0)}
-                        </span>
-                      )}
-                      <span className="text-3xl text-white font-light tabular-nums">
-                        ${pkg.price.toFixed(0)}
-                      </span>
-                    </div>
-                    {pkg.baseUnit && (
-                      <button
-                        onClick={() => handleAddPackage(pkg)}
-                        className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-red-600 hover:bg-red-700 rounded-full px-6 py-3 transition whitespace-nowrap"
-                      >
-                        {addedPackageId === pkg.id ? 'Added to Cart' : 'Add Package to Cart'}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  pkg={pkg}
+                  onAdd={handleAddPackage}
+                  added={addedPackageId === pkg.id}
+                />
               ))}
             </div>
           </div>

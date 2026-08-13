@@ -6,7 +6,11 @@
 // a later price change on an accessory silently makes every package's
 // savings figure wrong.
 //
-// price: what the package actually sells for.
+// price: what the package sells for when its base unit's default (first)
+// variant is selected. If the base unit has multiple variants at different
+// prices (e.g. Isolator's 3X3 vs 2X2/2X3), picking a pricier one adds that
+// variant's price difference over the default on top of `price` — see
+// resolvePackage()'s variantIndex param.
 // savings is derived as individualPrice - price, and only shown when > 0 —
 // a package can exist purely for convenience (bundled checkout, one SKU)
 // with no discount, in which case no savings badge renders.
@@ -19,7 +23,7 @@ export const packages = [
     platformId: 'isolator',
     name: 'Isolator Starter Package',
     description: 'The base unit plus the Cam and ISO Arms — everything you need to start running isolated exercises out of the box.',
-    baseUnitHandle: 'isolator-3x3',
+    baseUnitHandle: 'isolator',
     accessoryHandles: ['isolator-cam', 'iso-arms-pair'],
     price: 1499.0,
   },
@@ -27,10 +31,10 @@ export const packages = [
     id: 'vts-starter-package',
     platformId: 'vts',
     name: 'VTS Starter Package',
-    description: 'VTS Starter plus the Rack Attachment and Swivel Handles — a complete Smith-machine-style setup on your existing rack.',
+    description: 'VTS Starter plus Swivel Handles and the VTS Feather Barbell — a complete Smith-machine-style setup on your existing rack.',
     baseUnitHandle: 'vts-starter',
-    accessoryHandles: ['vts-rack-attachment-pair', 'swivel-handle-pair'],
-    price: 1999.0,
+    accessoryHandles: ['swivel-handle-pair', 'vts-feather-barbell'],
+    price: 1399.0,
   },
 ]
 
@@ -46,21 +50,33 @@ export function getPackagesByPlatform(platformId) {
   return getPackages().filter((pkg) => pkg.platformId === platformId)
 }
 
-// Resolves a package's referenced products and derived pricing. Returns
-// null for a handle that no longer exists (e.g. a product was removed)
-// rather than throwing, so a stale reference degrades instead of crashing
-// the platform page.
-export function resolvePackage(pkg) {
+// Resolves a package's referenced products and derived pricing for a given
+// base-unit variant (defaults to index 0, the base unit's default variant).
+// Returns null for a handle that no longer exists (e.g. a product was
+// removed) rather than throwing, so a stale reference degrades instead of
+// crashing the platform page.
+export function resolvePackage(pkg, variantIndex = 0) {
   const baseUnit = getProduct(pkg.baseUnitHandle) || null
   const accessories = (pkg.accessoryHandles || []).map((handle) => getProduct(handle)).filter(Boolean)
-  const componentPrices = [baseUnit, ...accessories].filter(Boolean).map((p) => p.price)
+
+  const baseVariants = baseUnit?.variants || []
+  const defaultVariantPrice = baseVariants[0]?.price ?? baseUnit?.price ?? 0
+  const selectedVariantPrice = baseVariants[variantIndex]?.price ?? defaultVariantPrice
+  const variantUpcharge = selectedVariantPrice - defaultVariantPrice
+
+  const baseUnitPrice = selectedVariantPrice
+  const componentPrices = [baseUnitPrice, ...accessories.map((a) => a.price)]
   const individualPrice = componentPrices.reduce((sum, price) => sum + price, 0)
-  const savings = Math.max(0, individualPrice - pkg.price)
+  const price = pkg.price + variantUpcharge
+  const savings = Math.max(0, individualPrice - price)
 
   return {
     ...pkg,
     baseUnit,
     accessories,
+    variantIndex,
+    baseUnitPrice,
+    price,
     individualPrice,
     savings,
   }

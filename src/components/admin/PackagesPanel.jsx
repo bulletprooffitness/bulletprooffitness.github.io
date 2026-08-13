@@ -6,15 +6,19 @@ import {
   updatePackage,
   deletePackage,
   getAllPackageOverrides,
+  clearAllPackageOverrides,
 } from '../../lib/packagesStore'
-import { platforms } from '../../data/platforms'
+import { platforms, resolveToNavPlatform } from '../../data/platforms'
+import { displayPrice } from '../../lib/pricing'
+import ConfirmModal from './ConfirmModal'
 
 const PACKAGE_PLATFORMS = platforms.filter((p) => !p.hiddenFromNav)
+const BASE_UNIT_PRODUCTS_FILTER = (p) => p.role === 'platform'
 
 function emptyDraft() {
   return {
     id: '',
-    platformId: PACKAGE_PLATFORMS[0]?.id || '',
+    platformId: '',
     name: '',
     description: '',
     baseUnitHandle: '',
@@ -31,19 +35,46 @@ function slugify(name) {
     .replace(/(^-|-$)/g, '')
 }
 
+// A base unit's platform is inferred from its single relationship, resolved
+// up to the nearest nav-visible platform (e.g. VTS Starter's relationship
+// is 'vts-full', which resolves to the 'vts' hub). Returns null when there's
+// no exactly-one-relationship to infer from — that's the only case the form
+// falls back to a manual platform picker for.
+function inferPlatformId(baseUnit) {
+  const rels = baseUnit?.relationships || []
+  if (rels.length !== 1) return null
+  return resolveToNavPlatform(rels[0].platformId)?.id || null
+}
+
 function PackageForm({ initial, products, onSave, onCancel }) {
   const [draft, setDraft] = useState(initial)
 
-  const selectedPlatform = PACKAGE_PLATFORMS.find((pl) => pl.id === draft.platformId)
-  const platformIds = selectedPlatform
-    ? [selectedPlatform.id, ...(selectedPlatform.subPlatformIds || [])]
+  const baseUnitProducts = products.filter(BASE_UNIT_PRODUCTS_FILTER)
+  const selectedBaseUnit = products.find((p) => p.handle === draft.baseUnitHandle) || null
+  const inferredPlatformId = selectedBaseUnit ? inferPlatformId(selectedBaseUnit) : null
+  const needsManualPlatform = Boolean(selectedBaseUnit) && !inferredPlatformId
+  const effectivePlatformId = inferredPlatformId || draft.platformId
+  const effectivePlatform = PACKAGE_PLATFORMS.find((pl) => pl.id === effectivePlatformId)
+
+  const platformIds = effectivePlatform
+    ? [effectivePlatform.id, ...(effectivePlatform.subPlatformIds || [])]
     : []
-  const baseUnitOptions = products.filter(
-    (p) => p.role === 'platform' && p.relationships?.some((r) => platformIds.includes(r.platformId))
-  )
   const accessoryOptions = products.filter(
     (p) => p.role !== 'platform' && p.relationships?.some((r) => platformIds.includes(r.platformId))
   )
+
+  function handleSelectBaseUnit(handle) {
+    const baseUnit = products.find((p) => p.handle === handle) || null
+    const inferred = baseUnit ? inferPlatformId(baseUnit) : null
+    setDraft((d) => ({
+      ...d,
+      baseUnitHandle: handle,
+      platformId: inferred || '',
+      // Base unit changed — the accessory list is scoped to the new
+      // platform, so previously-checked accessories may no longer apply.
+      accessoryHandles: [],
+    }))
+  }
 
   function toggleAccessory(handle) {
     setDraft((d) => ({
@@ -57,8 +88,9 @@ function PackageForm({ initial, products, onSave, onCancel }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (!draft.name.trim() || !draft.baseUnitHandle || !draft.price) return
+    if (!effectivePlatformId) return
     const id = draft.id || slugify(draft.name)
-    onSave({ ...draft, id, price: parseFloat(draft.price) })
+    onSave({ ...draft, id, platformId: effectivePlatformId, price: parseFloat(draft.price) })
   }
 
   return (
@@ -66,35 +98,17 @@ function PackageForm({ initial, products, onSave, onCancel }) {
       onSubmit={handleSubmit}
       className="border border-white/10 rounded-xl bg-neutral-950 p-5 space-y-4"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
-            Package Name
-          </label>
-          <input
-            type="text"
-            value={draft.name}
-            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder="Isolator Starter Package"
-            className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
-          />
-        </div>
-        <div>
-          <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
-            Platform
-          </label>
-          <select
-            value={draft.platformId}
-            onChange={(e) => setDraft((d) => ({ ...d, platformId: e.target.value, baseUnitHandle: '' }))}
-            className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
-          >
-            {PACKAGE_PLATFORMS.map((pl) => (
-              <option key={pl.id} value={pl.id}>
-                {pl.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
+          Package Name
+        </label>
+        <input
+          type="text"
+          value={draft.name}
+          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+          placeholder="Isolator Starter Package"
+          className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
+        />
       </div>
 
       <div>
@@ -110,27 +124,60 @@ function PackageForm({ initial, products, onSave, onCancel }) {
         />
       </div>
 
-      <div>
-        <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
-          Base Unit
-        </label>
-        <select
-          value={draft.baseUnitHandle}
-          onChange={(e) => setDraft((d) => ({ ...d, baseUnitHandle: e.target.value }))}
-          className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full max-w-md"
-        >
-          <option value="">— Select base unit —</option>
-          {baseUnitOptions.map((p) => (
-            <option key={p.handle} value={p.handle}>
-              {p.title} · ${p.price.toFixed(0)}
-            </option>
-          ))}
-        </select>
-        {baseUnitOptions.length === 0 && (
-          <p className="text-amber-400/70 text-xs mt-2">
-            No products with role "platform" are tagged to this platform yet.
-          </p>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
+            Base Unit
+          </label>
+          <select
+            value={draft.baseUnitHandle}
+            onChange={(e) => handleSelectBaseUnit(e.target.value)}
+            className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
+          >
+            <option value="">— Select base unit —</option>
+            {baseUnitProducts.map((p) => (
+              <option key={p.handle} value={p.handle}>
+                {p.title} · {displayPrice(p)}
+              </option>
+            ))}
+          </select>
+          {baseUnitProducts.length === 0 && (
+            <p className="text-amber-400/70 text-xs mt-2">
+              No products with role "platform" exist yet.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
+            Platform
+          </label>
+          {needsManualPlatform ? (
+            <>
+              <select
+                value={draft.platformId}
+                onChange={(e) => setDraft((d) => ({ ...d, platformId: e.target.value }))}
+                className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
+              >
+                <option value="">— Select platform —</option>
+                {PACKAGE_PLATFORMS.map((pl) => (
+                  <option key={pl.id} value={pl.id}>
+                    {pl.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-amber-400/70 text-xs mt-2">
+                {selectedBaseUnit.relationships?.length === 0
+                  ? "This base unit has no confirmed platform relationship yet — pick one manually, or confirm it in Admin › Compatibility first."
+                  : 'This base unit is tagged to multiple platforms — pick which one this package belongs to.'}
+              </p>
+            </>
+          ) : (
+            <div className="bg-black border border-white/10 rounded px-3 py-2 text-sm text-white/70 w-full">
+              {effectivePlatform ? effectivePlatform.name : '— Select a base unit first —'}
+            </div>
+          )}
+        </div>
       </div>
 
       <div>
@@ -150,7 +197,7 @@ function PackageForm({ initial, products, onSave, onCancel }) {
                 className="accent-red-600"
               />
               <span className="flex-1 flex-shrink-1">{p.title}</span>
-              <span className="text-white/40 tabular-nums text-xs">${p.price.toFixed(0)}</span>
+              <span className="text-white/40 tabular-nums text-xs">{displayPrice(p)}</span>
             </label>
           ))}
         </div>
@@ -212,7 +259,7 @@ function PackageRow({ pkg, onEdit, onDelete }) {
           {resolved.accessories.length} accessor{resolved.accessories.length === 1 ? 'y' : 'ies'}
         </p>
         <p className="text-white/60 text-sm tabular-nums">
-          ${pkg.price.toFixed(0)}
+          ${resolved.price.toFixed(0)}
           {resolved.savings > 0 && (
             <span className="text-white/30">
               {' '}
@@ -243,6 +290,8 @@ export default function PackagesPanel() {
   const [version, setVersion] = useState(0)
   const [editingId, setEditingId] = useState(null)
   const [creating, setCreating] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
   const products = useMemo(() => getProducts(), [version])
   const allPackages = useMemo(() => getPackages(), [version])
@@ -253,6 +302,34 @@ export default function PackagesPanel() {
 
   function refresh() {
     setVersion((v) => v + 1)
+  }
+
+  // Unlike Products' "Copy as Code" (which copies field-level patches to
+  // merge into existing records), packages here are full new-or-edited
+  // records — the useful export is each one as a ready-to-paste object
+  // literal matching packages.js's own array shape, since a brand-new
+  // package has no existing entry to patch against.
+  function handleCopyCode() {
+    const lines = allPackages.map((pkg) => {
+      const { id, platformId, name, description, baseUnitHandle, accessoryHandles, price } = pkg
+      const fields = [
+        `    id: ${JSON.stringify(id)},`,
+        `    platformId: ${JSON.stringify(platformId)},`,
+        `    name: ${JSON.stringify(name)},`,
+        `    description: ${JSON.stringify(description)},`,
+        `    baseUnitHandle: ${JSON.stringify(baseUnitHandle)},`,
+        `    accessoryHandles: ${JSON.stringify(accessoryHandles)},`,
+        `    price: ${price},`,
+      ].join('\n')
+      return `  {\n${fields}\n  },`
+    })
+    const code =
+      `// Packages from /admin — replace the \`packages\` array in src/data/packages.js\n` +
+      `// with this (or merge in the entries that changed), then delete this comment.\n` +
+      `export const packages = [\n${lines.join('\n')}\n]`
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   function handleSave(draft) {
@@ -273,6 +350,26 @@ export default function PackagesPanel() {
     refresh()
   }
 
+  function handleDownloadBackup() {
+    const store = getAllPackageOverrides()
+    const blob = new Blob([JSON.stringify(store, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const date = new Date().toISOString().slice(0, 10)
+    link.href = url
+    link.download = `bulletproof-package-edits-${date}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleConfirmReset() {
+    clearAllPackageOverrides()
+    setEditingId(null)
+    setCreating(false)
+    setConfirmingReset(false)
+    refresh()
+  }
+
   const editingPackage = editingId ? allPackages.find((p) => p.id === editingId) : null
 
   return (
@@ -282,14 +379,30 @@ export default function PackagesPanel() {
           Packages bundle a base unit with accessories at one price. Savings are computed from
           live product prices, never entered by hand.
         </p>
-        {!creating && !editingId && (
+        <div className="flex gap-3 flex-shrink-0">
           <button
-            onClick={() => setCreating(true)}
-            className="text-[11px] font-semibold uppercase tracking-widest bg-white text-black rounded-full px-5 py-2.5 hover:bg-white/90 transition whitespace-nowrap"
+            onClick={handleCopyCode}
+            disabled={allPackages.length === 0}
+            className="text-[11px] font-semibold uppercase tracking-widest text-white/70 hover:text-white border border-white/15 rounded-full px-5 py-2.5 disabled:opacity-30 disabled:cursor-not-allowed transition whitespace-nowrap"
           >
-            + New Package
+            {copied ? 'Copied!' : 'Copy as Code'}
           </button>
-        )}
+          <button
+            onClick={() => setConfirmingReset(true)}
+            disabled={overrideCount === 0}
+            className="text-[11px] font-semibold uppercase tracking-widest text-white/50 hover:text-red-400 border border-white/15 rounded-full px-5 py-2.5 disabled:opacity-30 disabled:cursor-not-allowed transition whitespace-nowrap"
+          >
+            Clear Local Edits
+          </button>
+          {!creating && !editingId && (
+            <button
+              onClick={() => setCreating(true)}
+              className="text-[11px] font-semibold uppercase tracking-widest bg-white text-black rounded-full px-5 py-2.5 hover:bg-white/90 transition whitespace-nowrap"
+            >
+              + New Package
+            </button>
+          )}
+        </div>
       </div>
 
       {creating && (
@@ -331,6 +444,18 @@ export default function PackagesPanel() {
           permanently.
         </p>
       )}
+
+      <ConfirmModal
+        open={confirmingReset}
+        title="Clear Local Edits?"
+        description="This discards every package created or edited in this browser and restores the built-in defaults. This cannot be undone."
+        confirmLabel="Clear Edits"
+        onConfirm={handleConfirmReset}
+        onCancel={() => setConfirmingReset(false)}
+        onDownload={handleDownloadBackup}
+        downloadLabel="Download Backup"
+        downloadDescription="Downloads the edited data copy as a back up."
+      />
     </div>
   )
 }

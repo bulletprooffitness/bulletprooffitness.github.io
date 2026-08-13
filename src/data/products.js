@@ -24,33 +24,42 @@ import { productAsset } from '../lib/assets'
 
 const rawProducts = [
   {
-    handle: 'isolator-3x3',
-    title: 'ISOLATOR 3X3',
+    handle: 'isolator',
+    title: 'ISOLATOR',
     role: 'platform',
     relationships: [{ platformId: 'isolator', type: 'fits' }],
+    // Top-level price = the lowest variant's price, shown as a "From $X"
+    // starting price on cards/listings that only have room for one number
+    // (see priceRange()/lowestPrice() in lib/pricing.js). The real price
+    // for a given size lives on that variant, in variants[].price.
     price: 899.0,
     // Sourced from their real product copy (docs/scan/products_p1.json), condensed.
     description:
-      'A cost-effective, space-saving base unit for isolated exercises you\'d otherwise need a full commercial gym for. Includes the carriage, weight holder, and pins, plus the preacher pad/seat, short leg pad, long leg pad, and curl arm attachment. 3x3" post.',
+      "A cost-effective, space-saving base unit for isolated exercises you'd otherwise need a full commercial gym for. Includes the carriage, weight holder, and pins, plus the preacher pad/seat, short leg pad, long leg pad, and curl arm attachment. Available in 3x3\" and 2x2\"/2x3\" post sizes.",
+    // Default/fallback images — the 3X3 variant's photos, shown until a
+    // variant with its own `images` is selected (see resolveVariantImages()
+    // in lib/pricing.js).
     images: [
       '/src/assets/products/isolator-3x3_-1.jpg',
       '/src/assets/products/isolator-3x3_-2.jpg',
     ],
-    variants: [{ title: '3X3', price: 899.0, available: true }],
-    // Placeholder spec values for demo layout — confirm real numbers before this goes live.
-    specs: { postSize: '3" x 3"', footprint: '48" x 24"', weightCapacity: '400 lb / side', camOptions: '5' },
-  },
-  {
-    handle: 'isolator-2x2-2x3',
-    title: 'ISOLATOR 2X2/2X3',
-    role: 'platform',
-    relationships: [{ platformId: 'isolator', type: 'fits' }],
-    price: 939.0,
-    description:
-      'The same ISOLATOR base unit — carriage, weight holder, pins, and full attachment set (preacher pad/seat, short and long leg pads, curl arm attachment) — sized for a 2x2" or 2x3" post.',
-    images: ['/src/assets/products/test-2-1.jpg', '/src/assets/products/test-2-2.jpg'],
-    variants: [{ title: '2X2/2X3', price: 939.0, available: true }],
-    specs: { postSize: '2" x 2" / 2" x 3"', footprint: '42" x 22"', weightCapacity: '350 lb / side', camOptions: '5' },
+    variants: [
+      {
+        title: '3X3',
+        price: 899.0,
+        available: true,
+        images: ['/src/assets/products/isolator-3x3_-1.jpg', '/src/assets/products/isolator-3x3_-2.jpg'],
+        // Placeholder spec values for demo layout — confirm real numbers before this goes live.
+        specs: { postSize: '3" x 3"', footprint: '48" x 24"', weightCapacity: '400 lb / side', camOptions: '5' },
+      },
+      {
+        title: '2X2/2X3',
+        price: 939.0,
+        available: true,
+        images: ['/src/assets/products/test-2-1.jpg', '/src/assets/products/test-2-2.jpg'],
+        specs: { postSize: '2" x 2" / 2" x 3"', footprint: '42" x 22"', weightCapacity: '350 lb / side', camOptions: '5' },
+      },
+    ],
   },
   {
     handle: 'isolator-cam',

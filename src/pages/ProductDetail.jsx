@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, Navigate, Link } from 'react-router-dom'
 import { getProduct, getProductsByPlatform } from '../data/products'
 import { getPlatform } from '../data/platforms'
+import { resolveVariantImages } from '../lib/pricing'
 import { useCart } from '../lib/CartContext'
 import ProductCard from '../components/ProductCard'
+
+const SPEC_LABELS = [
+  { key: 'postSize', label: 'Post Size' },
+  { key: 'footprint', label: 'Footprint' },
+  { key: 'weightCapacity', label: 'Weight Capacity' },
+  { key: 'camOptions', label: 'Cam Options' },
+]
 
 export default function ProductDetail() {
   const { handle } = useParams()
@@ -15,6 +23,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     setAdded(false)
+    setActiveImage(0)
   }, [handle, selectedVariant])
 
   if (!product) return <Navigate to="/shop" replace />
@@ -25,6 +34,8 @@ export default function ProductDetail() {
   const related = platform
     ? getProductsByPlatform(platform.id).filter((p) => p.handle !== product.handle).slice(0, 4)
     : []
+  const images = resolveVariantImages(product, selectedVariant)
+  const specs = product.variants[selectedVariant]?.specs
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-16">
@@ -32,14 +43,14 @@ export default function ProductDetail() {
         <div>
           <div className="aspect-square bg-neutral-900 rounded overflow-hidden">
             <img
-              src={product.images[activeImage]}
+              src={images[activeImage]}
               alt={product.title}
               className="w-full h-full object-cover"
             />
           </div>
-          {product.images.length > 1 && (
+          {images.length > 1 && (
             <div className="flex gap-3 mt-3">
-              {product.images.map((img, i) => (
+              {images.map((img, i) => (
                 <button
                   key={img}
                   onClick={() => setActiveImage(i)}
@@ -109,6 +120,21 @@ export default function ProductDetail() {
             </div>
           )}
 
+          {specs && (
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 mt-8 pt-8 border-t border-white/10">
+              {SPEC_LABELS.map(({ key, label }) =>
+                specs[key] ? (
+                  <div key={key}>
+                    <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 mb-1">
+                      {label}
+                    </dt>
+                    <dd className="text-white text-sm tabular-nums">{specs[key]}</dd>
+                  </div>
+                ) : null
+              )}
+            </dl>
+          )}
+
           <button
             onClick={() => {
               addItem({
@@ -119,7 +145,7 @@ export default function ProductDetail() {
                     ? `${product.title} — ${product.variants[selectedVariant].title}`
                     : product.title,
                 price: product.variants[selectedVariant].price,
-                image: product.images[0],
+                image: images[0],
               })
               setAdded(true)
             }}

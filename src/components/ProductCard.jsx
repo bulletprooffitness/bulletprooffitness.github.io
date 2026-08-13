@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { displayPrice } from '../lib/pricing'
 
 export default function ProductCard({ product }) {
   return (
@@ -15,7 +16,7 @@ export default function ProductCard({ product }) {
       </div>
       <div className="mt-4 flex flex-col gap-1">
         <span className="text-sm text-white/85 leading-snug flex-shrink-1">{product.title}</span>
-        <span className="text-sm text-white/45 tabular-nums">${product.price.toFixed(2)}</span>
+        <span className="text-sm text-white/45 tabular-nums">{displayPrice(product)}</span>
       </div>
     </Link>
   )
