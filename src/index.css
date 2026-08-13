@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+
+  --color-brand-red: #dc2828;
+  --color-brand-black: #141414;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: black;
+  color: white;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}

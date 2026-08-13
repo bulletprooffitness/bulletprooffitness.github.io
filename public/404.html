@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bulletproof Fitness Equipment</title>
+    <script>
+      // GitHub Pages serves this file for any unmatched path (direct nav or
+      // refresh on a client-routed URL like /our-story). It re-encodes the
+      // path into a query string and redirects to root, where the inline
+      // script in index.html decodes it and restores history state before
+      // React Router mounts — the standard SPA-on-static-hosting workaround
+      // (spa-github-pages pattern). No server-side rewrite exists here.
+      var path = location.pathname + location.search + location.hash
+      location.replace('/?redirect=' + encodeURIComponent(path))
+    </script>
+  </head>
+  <body></body>
+</html>
