@@ -32,7 +32,7 @@ const rawProducts = [
     // starting price on cards/listings that only have room for one number
     // (see priceRange()/lowestPrice() in lib/pricing.js). The real price
     // for a given size lives on that variant, in variants[].price.
-    price: 899.0,
+    price: 899.99,
     // Sourced from their real product copy (docs/scan/products_p1.json), condensed.
     description:
       "A cost-effective, space-saving base unit for isolated exercises you'd otherwise need a full commercial gym for. Includes the carriage, weight holder, and pins, plus the preacher pad/seat, short leg pad, long leg pad, and curl arm attachment. Available in 3x3\" and 2x2\"/2x3\" post sizes.",
@@ -46,18 +46,17 @@ const rawProducts = [
     variants: [
       {
         title: '3X3',
-        price: 899.0,
+        price: 899.99,
         available: true,
         images: ['/src/assets/products/isolator-3x3_-1.jpg', '/src/assets/products/isolator-3x3_-2.jpg'],
-        // Placeholder spec values for demo layout — confirm real numbers before this goes live.
-        specs: { postSize: '3" x 3"', footprint: '48" x 24"', weightCapacity: '400 lb / side', camOptions: '5' },
+        specs: { postSize: '3" x 3"', camOptions: '5' },
       },
       {
         title: '2X2/2X3',
-        price: 939.0,
+        price: 899.99,
         available: true,
         images: ['/src/assets/products/test-2-1.jpg', '/src/assets/products/test-2-2.jpg'],
-        specs: { postSize: '2" x 2" / 2" x 3"', footprint: '42" x 22"', weightCapacity: '350 lb / side', camOptions: '5' },
+        specs: { postSize: '2" x 2" / 2" x 3"', camOptions: '5' },
       },
     ],
   },
@@ -181,18 +180,48 @@ const rawProducts = [
     variants: [{ title: 'Standard', price: 1249.99, available: true }],
   },
   {
-    handle: 'vts-starter',
-    title: 'VTS STARTER',
+    handle: 'vts-trolley-pair',
+    title: 'VTS Rack Attachment (Pair)',
     role: 'platform',
-    // Starter bundle is the full-duty VTS line specifically.
+    // Full-duty VTS base unit. Handle is 'vts-trolley-pair' (not
+    // 'vts-rack-attachment-pair') to avoid colliding with the existing
+    // distinct accessory product of that handle below — that product is a
+    // separate real SKU on their site, not this base unit.
     relationships: [{ platformId: 'vts-full', type: 'fits' }],
     price: 899.0,
-    // Their own product page had no body copy for this bundle — described here
-    // using the real VTS Rack Attachment copy below, since Starter is that unit.
     description:
-      "The entry point into VTS (Versa Trolley System) — converts a squat rack or rig into a Smith-machine-style trainer using your own barbell, with UHMW rollers to protect the upright and a hex port system for attachments.",
-    images: ['/src/assets/products/vts-starter-1.png', '/src/assets/products/vts-starter-2.png'],
-    variants: [{ title: 'Starter', price: 899.0, available: true }],
+      'The VTS (Versa Trolley System) transforms your squat rack into a versatile training hub with eight UHMW rollers on all four sides for smooth iso-lateral movements, plus a proprietary hex port for specialized attachments.',
+    images: [
+      '/src/assets/products/vts-rack-attachment-pair-1-1.png',
+      '/src/assets/products/vts-rack-attachment-pair-1-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 899.0, available: true }],
+    specs: {
+      weight: '24 lb / trolley (48 lb pair)',
+      rollers: '8 UHMW, all 4 sides',
+      rackCompatibility: '3x3, 2x3, 2x2 uprights',
+      barbellCompatibility: '28-30mm and 50mm Olympic barbells',
+    },
+  },
+  {
+    handle: 'vts-lite-rack-attachment-pair',
+    title: 'VTS Lite Rack Attachment (Pair)',
+    role: 'platform',
+    relationships: [{ platformId: 'vts-lite', type: 'fits' }],
+    price: 599.0,
+    description:
+      'The VTS Lite transforms your squat rack into a Smith machine using your own barbell, with hourglass-shaped UHMW rollers for smooth, guided barbell travel — a more affordable, streamlined alternative to the full VTS system.',
+    images: [
+      '/src/assets/products/vts-lite-rack-attachment-pair-1.png',
+      '/src/assets/products/vts-lite-rack-attachment-pair-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 599.0, available: true }],
+    specs: {
+      weight: '15 lb / side (30 lb pair)',
+      rollers: '4 hourglass UHMW, front/back only',
+      rackCompatibility: '3x3, 2x3, 2x2 uprights',
+      barbellCompatibility: '28-30mm and 50mm Olympic barbells',
+    },
   },
   {
     handle: 'vts-rack-attachment-pair',
@@ -276,6 +305,192 @@ const rawProducts = [
       '/src/assets/products/vts-feather-barbell-2.png',
     ],
     variants: [{ title: 'Standard', price: 135.0, available: true }],
+  },
+  {
+    handle: 'long-lever-arm',
+    title: 'Long Lever Arm',
+    role: 'accessory',
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 139.0,
+    description: '36-inch extension enabling reverse hypers, pullovers, and assisted Nordic curls on the Isolator.',
+    images: ['/src/assets/products/long-lever-arm-1.png'],
+    variants: [{ title: 'Standard', price: 139.0, available: true }],
+  },
+  {
+    handle: 'adjustable-roller-pad',
+    title: 'Self Adjusting/Adjustable Roller Pad',
+    role: 'accessory',
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 139.99,
+    description: 'Free-floating comfort with lock-in control, moving with your body during exercises.',
+    images: [
+      '/src/assets/products/adjustable-roller-pad-1.png',
+      '/src/assets/products/adjustable-roller-pad-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 139.99, available: true }],
+  },
+  {
+    handle: 'isolator-cam-only',
+    title: 'ISOLATOR Cam (Cam Only)',
+    role: 'accessory',
+    // Distinct real SKU from the existing 'isolator-cam' attachment product
+    // above (that's the pre-packaged cam attachment; this is the bare
+    // replacement/upgrade cam mechanism) — different handle to avoid collision.
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 249.0,
+    description: 'Replacement or upgrade cam mechanism for variable resistance training.',
+    images: [
+      '/src/assets/products/isolator-cam-only-1.png',
+      '/src/assets/products/isolator-cam-only-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 249.0, available: true }],
+  },
+  {
+    handle: 'isolator-double-weight-horn',
+    title: 'ISOLATOR Double Weight Horn',
+    role: 'accessory',
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 529.0,
+    description: 'Heavy-duty dual weight horn supporting advanced training configurations.',
+    images: [
+      '/src/assets/products/isolator-double-weight-horn-1.png',
+      '/src/assets/products/isolator-double-weight-horn-2.jpg',
+    ],
+    variants: [{ title: 'Standard', price: 529.0, available: true }],
+  },
+  {
+    handle: 'isolator-pullover-attachment',
+    title: 'ISOLATOR Pullover Attachment',
+    role: 'accessory',
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 399.99,
+    description: 'Specialized attachment enabling pullover movements on the Isolator.',
+    images: [
+      '/src/assets/products/isolator-pullover-attachment-1.png',
+      '/src/assets/products/isolator-pullover-attachment-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 399.99, available: true }],
+  },
+  {
+    handle: 'knurled-anodized-pop-pin',
+    title: 'Knurled Anodized Aluminum Pop Pin',
+    role: 'accessory',
+    relationships: [{ platformId: 'isolator', type: 'fits' }],
+    price: 30.99,
+    description: 'Precision-engineered adjustment pin with knurled anodized aluminum construction.',
+    images: [
+      '/src/assets/products/knurled-anodized-pop-pin-1.jpg',
+      '/src/assets/products/knurled-anodized-pop-pin-2.jpg',
+    ],
+    variants: [{ title: 'Standard', price: 30.99, available: true }],
+  },
+  {
+    handle: 'vts-9in-weight-horns-pair',
+    title: 'VTS 9" Weight Horns (Pair)',
+    role: 'accessory',
+    relationships: [{ platformId: 'vts-full', type: 'fits' }],
+    price: 119.0,
+    description: 'Screw-in horns enabling iso-lateral exercises and expanded loading capacity.',
+    images: [
+      '/src/assets/products/vts-9in-weight-horns-1.png',
+      '/src/assets/products/vts-9in-weight-horns-2.jpg',
+    ],
+    variants: [{ title: 'Standard', price: 119.0, available: true }],
+  },
+  {
+    handle: 'iso-handles-attachment-pair',
+    title: 'ISO Handles Attachment (Pair)',
+    role: 'accessory',
+    category: 'handles',
+    relationships: [{ platformId: 'vts-full', type: 'fits' }],
+    price: 129.99,
+    description: 'Transforms your VTS into an iso-lateral training machine with independent side control.',
+    images: [
+      '/src/assets/products/iso-handles-attachment-pair-1.png',
+      '/src/assets/products/iso-handles-attachment-pair-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 129.99, available: true }],
+  },
+  {
+    handle: 'hexport-iso-handles-pair',
+    title: 'Hexport ISO Handles (Pair)',
+    role: 'accessory',
+    category: 'handles',
+    relationships: [{ platformId: 'vts-full', type: 'fits' }],
+    price: 189.99,
+    description: 'Premium iso-lateral handles with sealed bearings and fixed hexport mounting.',
+    images: [
+      '/src/assets/products/hexport-iso-handles-pair-1.png',
+      '/src/assets/products/hexport-iso-handles-pair-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 189.99, available: true }],
+  },
+  {
+    handle: 'vts-launch-pad-leg-press',
+    title: 'VTS Launch Pad Leg Press',
+    role: 'accessory',
+    relationships: [
+      { platformId: 'vts-full', type: 'fits' },
+      { platformId: 'vts-lite', type: 'fits' },
+    ],
+    price: 449.0,
+    description: 'Specialized leg press attachment for VTS and VTS Lite systems.',
+    images: [
+      '/src/assets/products/vts-launch-pad-leg-press-1.png',
+      '/src/assets/products/vts-launch-pad-leg-press-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 449.0, available: true }],
+  },
+  {
+    handle: 'high-low-pulley-system-rack-attachment',
+    title: 'High/Low Pulley System Rack Attachment',
+    role: 'accessory',
+    category: 'attachments',
+    relationships: [
+      { platformId: 'vts-full', type: 'fits' },
+      { platformId: 'vts-lite', type: 'fits' },
+    ],
+    price: 499.0,
+    description: 'Pulley system for cable-driven exercises on VTS and VTS Lite equipment.',
+    images: [
+      '/src/assets/products/high-low-pulley-system-rack-attachment-1.png',
+      '/src/assets/products/high-low-pulley-system-rack-attachment-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 499.0, available: true }],
+  },
+  {
+    handle: 'vts-mini-barbell',
+    title: 'VTS Mini Barbell',
+    role: 'accessory',
+    category: 'barbells',
+    relationships: [
+      { platformId: 'vts-full', type: 'fits' },
+      { platformId: 'vts-lite', type: 'fits' },
+    ],
+    price: 99.99,
+    description: 'Precision-engineered compact barbell designed to lock securely in the VTS clamp.',
+    images: [
+      '/src/assets/products/vts-mini-barbell-1.png',
+      '/src/assets/products/vts-mini-barbell-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 99.99, available: true }],
+  },
+  {
+    handle: 'bulletproof-lift-assist',
+    title: 'Bulletproof Lift Assist',
+    role: 'accessory',
+    relationships: [
+      { platformId: 'isolator', type: 'fits' },
+      { platformId: 'vts-full', type: 'fits' },
+      { platformId: 'vts-lite', type: 'fits' },
+    ],
+    price: 89.0,
+    description: 'Adjustable counterbalance system that makes Bulletproof equipment feel lighter and easier to adjust.',
+    images: [
+      '/src/assets/products/bulletproof-lift-assist-1.png',
+      '/src/assets/products/bulletproof-lift-assist-2.png',
+    ],
+    variants: [{ title: 'Standard', price: 89.0, available: true }],
   },
   {
     handle: 't-shirt-bp-logo',
