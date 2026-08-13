@@ -63,6 +63,18 @@ function PackageForm({ initial, products, onSave, onCancel }) {
     (p) => p.role !== 'platform' && p.relationships?.some((r) => platformIds.includes(r.platformId))
   )
 
+  // Live subtotal/discount preview — recomputed on every render, so it
+  // updates as soon as the base unit, accessories, or price change. Uses
+  // the base unit's default (lowest) variant price, matching how
+  // resolvePackage() prices a package before a customer picks a variant.
+  const selectedAccessories = accessoryOptions.filter((p) => draft.accessoryHandles.includes(p.handle))
+  const baseUnitPrice = selectedBaseUnit ? selectedBaseUnit.variants?.[0]?.price ?? selectedBaseUnit.price : 0
+  const subtotal = selectedBaseUnit ? baseUnitPrice + selectedAccessories.reduce((sum, p) => sum + p.price, 0) : 0
+  const enteredPrice = parseFloat(draft.price)
+  const hasValidPrice = selectedBaseUnit && !Number.isNaN(enteredPrice)
+  const discountAmount = hasValidPrice ? Math.max(0, subtotal - enteredPrice) : 0
+  const discountPercent = hasValidPrice && subtotal > 0 ? (discountAmount / subtotal) * 100 : 0
+
   function handleSelectBaseUnit(handle) {
     const baseUnit = products.find((p) => p.handle === handle) || null
     const inferred = baseUnit ? inferPlatformId(baseUnit) : null
@@ -203,23 +215,41 @@ function PackageForm({ initial, products, onSave, onCancel }) {
         </div>
       </div>
 
-      <div>
-        <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
-          Package Price
-        </label>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={draft.price}
-          onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-          placeholder="1499.00"
-          className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full max-w-xs"
-        />
-        <p className="text-white/30 text-xs mt-2 leading-relaxed flex-shrink-1">
-          Savings are calculated automatically from the base unit + accessory prices above. Set
-          the price equal to (or above) their total to show no savings badge.
-        </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-white/40 block mb-2">
+            Package Price
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={draft.price}
+            onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
+            placeholder="1499.00"
+            className="bg-black border border-white/20 rounded px-3 py-2 text-sm text-white w-full"
+          />
+          <p className="text-white/30 text-xs mt-2 leading-relaxed flex-shrink-1">
+            Set the price equal to (or above) the subtotal to show no savings badge.
+          </p>
+        </div>
+
+        <div className="bg-black border border-white/10 rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-white/40">
+              Subtotal {selectedBaseUnit ? `(1 base unit + ${selectedAccessories.length} accessor${selectedAccessories.length === 1 ? 'y' : 'ies'})` : ''}
+            </span>
+            <span className="text-white tabular-nums">${subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-white/10">
+            <span className="text-white/40">Discount</span>
+            <span className={`tabular-nums ${discountAmount > 0 ? 'text-red-400' : 'text-white/50'}`}>
+              {hasValidPrice
+                ? `-$${discountAmount.toFixed(2)} (${discountPercent.toFixed(0)}%)`
+                : '—'}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">
